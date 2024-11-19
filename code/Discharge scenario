@@ -1,0 +1,45 @@
+# Discharge scenario
+
+DISMDS <- prcomp(discharge, scale=TRUE)
+LOGDISMDS <- prcomp(logdischarge, scale=TRUE)
+
+ggbiplot(DISMDS)
+ggbiplot(LOGDISMDS)
+
+results <- LOGDISMDS$x
+fviz_nbclust(results, FUNcluster=kmeans)
+
+km1 <- eclust(results, "kmeans", hc_metric="euclidean", k=2)
+km1$cluster
+
+res.pca <- PCA(logdischarge,ncp=2,scale.unit=TRUE)
+res.pca$eig
+res.hcpc <- HCPC(res.pca)
+fviz_cluster(res.hcpc,
+             repel = TRUE,            # Avoid label overlapping
+             show.clust.cent = TRUE, # Show cluster centers
+             palette = "jco",         # Color palette see ?ggpubr::ggpar
+             ggtheme = theme_minimal(),
+             main = "Factor map"
+)
+
+HClusterinfo <- as.data.frame(res.hcpc$data.clust$clust)
+HCluster <- as.numeric(res.hcpc$data.clust$clust)
+HCluster_SC <- HCluster[-c(211,285)]
+
+PCA.score <- as.data.frame(res.pca$ind$coord)
+PCA.score$HCluster <- HCluster
+PCA.arrow <- as.data.frame(res.pca$var$coord)
+
+summary(res.pca)
+
+WeirDistmatrix$HCluster <- as.factor(HCluster)
+WeirDistmatrix$KCluster <- as.factor(km1$cluster)
+colnames(WeirDistmatrix) = c("Distance","HCluster","KCluster")
+
+biomass <- read.table("D:/Work/20240409 HW/R/biomass.txt",header=T,sep='\t')
+WeirDistmatrix$SC <- log1p(biomass$SC)
+WeirDistmatrix$JS <- log1p(biomass$JS)
+my_comparisons <- list(c("1","2"),c("2","3"),c("1","3"))
+
+
