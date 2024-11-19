@@ -1,0 +1,45 @@
+# Variation partitioning
+
+nutrient_SC <- read.table("D:/Work/20240409 HW/R/nutrient_SC.txt",header=T,sep='\t')
+nutrient_JS <- read.table("D:/Work/20240409 HW/R/nutrient_JS.txt",header=T,sep='\t')
+WQ_SC <- read.table("D:/Work/20240409 HW/R/WQ_SC.txt",header=T,sep='\t')
+WQ_JS <- read.table("D:/Work/20240409 HW/R/WQ_JS.txt",header=T,sep='\t')
+
+nutrient_SC <- nutrient_SC[-c(211,285),]
+WQ_SC <- WQ_SC[-c(211,285),]
+WQ_SC <- WQ_SC[,-3]
+WQ_JS <- WQ_JS[,-3]
+WQ_SC <- WQ_SC[,-3]
+WQ_JS <- WQ_JS[,-3]
+
+library(fmsb)
+num.vars <- 7    #?????? ?????? ??????
+num.obs <- 447     #?????? ?????? ??????
+TEnvm <- as.matrix(nutrient_SC)
+vif_func(in_frame=TEnvm, thresh=5, trace=T)
+
+nutrient_VIF_SC <- as.data.frame(cbind(nutrient_SC$T.P,nutrient_SC$NH4,nutrient_SC$NO3,nutrient_SC$PO4))
+nutrient_VIF_JS <- as.data.frame(cbind(nutrient_JS$T.P,nutrient_JS$NH4,nutrient_JS$NO3,nutrient_JS$PO4))
+
+nutrient_SC_subs <- subset(nutrient_SC, select=names(c("TN","T.P","DIN","NH4","NO3","DIP","PO4")))
+WQ_SC_subs <- subset(WQ_SC,select=names(c("WT","DO","TOC","pH","Cond","SS")))
+
+part <- varpart(Genus_SC,logdischarge_SC,nutrient_SC_subs,WQ_SC_subs)
+
+# Visualization
+
+par(mfrow=c(1,3))
+mod_SC <- varpart(Genus_SC,logdischarge_SC,nutrient_SC,WQ_SC)
+plot(mod_SC,digits=2, Xnames=c("Discharge","Nutrient","WQ"),bg=c("tomato","gray","navy"))
+mod_JS <- varpart(Genus_JS,logdischarge,nutrient_JS,WQ_JS)
+plot(mod_JS,digits=2, Xnames=c("Discharge","Nutrient","WQ"),bg=c("tomato","gray","navy"))
+mod_dist <- varpart(WeirDistmatrix$Distance,logdischarge,nutrient_JS,WQ_JS)
+plot(mod_dist,digits=2, Xnames=c("Discharge","Nutrient","WQ"),bg=c("tomato","gray","navy"))
+
+par(mfrow=c(1,3))
+mod_SC <- varpart(Genus_SC,logdischarge_SC,nutrient_VIF_SC,WQ_SC)
+plot(mod_SC,digits=2, Xnames=c("Discharge","Nutrient","WQ"),bg=c("tomato","gray","navy"))
+mod_JS <- varpart(Genus_JS,logdischarge,nutrient_VIF_JS,WQ_JS)
+plot(mod_JS,digits=2, Xnames=c("Discharge","Nutrient","WQ"),bg=c("tomato","gray","navy"))
+mod_dist <- varpart(WeirDistmatrix$Distance,logdischarge,nutrient_VIF_JS,WQ_JS)
+plot(mod_dist,digits=2, Xnames=c("Discharge","Nutrient","WQ"),bg=c("tomato","gray","navy"))
