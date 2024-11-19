@@ -43,3 +43,16 @@ WeirDistmatrix$JS <- log1p(biomass$JS)
 my_comparisons <- list(c("1","2"),c("2","3"),c("1","3"))
 
 
+# Indicator species
+
+indval_SC_C <- multipatt(Genus_SC,HCluster_SC,control=how(nperm=999))
+summary(indval_SC_C, indvalcomp = TRUE)
+
+indval_SC <- multipatt(Genus_SC,HCluster_SC,duleg=TRUE,control=how(nperm=999))
+summary(indval_SC, indvalcomp = TRUE)
+
+indval_JS <- multipatt(Genus_JS,HCluster,control=how(nperm=999))
+summary(indval_JS, indvalcomp = TRUE)
+
+indval_SCJS <- multipatt(Genus_SCJS,c(WeirDistmatrix$HCluster,WeirDistmatrix$HCluster),control=how(nperm=999))
+summary(indval_SCJS, indvalcomp = TRUE)
