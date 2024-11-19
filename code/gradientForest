@@ -1,6 +1,6 @@
 # Develop gradientForest models
 
-discharge <- read.table("D:/Work/20240409 HW/R/discharge.txt",header=T,sep='\t',stringsAsFactor = FALSE)
+discharge <- read.table("~/discharge.txt",header=T,sep='\t',stringsAsFactor = FALSE)
 logdischarge <- log1p(discharge)
 logdischarge_SC <- logdischarge[-c(211,285),]
 lev <- floor(log2(449*0.368/2))
