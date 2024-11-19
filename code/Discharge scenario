@@ -37,7 +37,7 @@ WeirDistmatrix$HCluster <- as.factor(HCluster)
 WeirDistmatrix$KCluster <- as.factor(km1$cluster)
 colnames(WeirDistmatrix) = c("Distance","HCluster","KCluster")
 
-biomass <- read.table("D:/Work/20240409 HW/R/biomass.txt",header=T,sep='\t')
+biomass <- read.table("~/biomass.txt",header=T,sep='\t')
 WeirDistmatrix$SC <- log1p(biomass$SC)
 WeirDistmatrix$JS <- log1p(biomass$JS)
 my_comparisons <- list(c("1","2"),c("2","3"),c("1","3"))
