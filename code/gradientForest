@@ -1,0 +1,200 @@
+# Develop gradientForest models
+
+discharge <- read.table("D:/Work/20240409 HW/R/discharge.txt",header=T,sep='\t',stringsAsFactor = FALSE)
+logdischarge <- log1p(discharge)
+logdischarge_SC <- logdischarge[-c(211,285),]
+lev <- floor(log2(449*0.368/2))
+
+
+gf_SC <- gradientForest(cbind(logdischarge_SC, Genus_SC),
+                        predictor.vars=colnames(logdischarge),
+                        response.vars = colnames(Genus_SC),
+                        ntree=500, transform =NULL, compact=T,
+                        nbin=201, maxLevel=lev, corr.threshold=0.5)
+
+gf_JS <- gradientForest(cbind(logdischarge, Genus_JS),
+                        predictor.vars=colnames(logdischarge),
+                        response.vars = colnames(Genus_JS),
+                        ntree=500, transform =NULL, compact=T,
+                        nbin=201, maxLevel=lev, corr.threshold=0.5)
+
+plot(gf_SC, plot.type="O")
+plot(gf_JS, plot.type="O")
+
+# split plot 
+
+names(gf_SC)
+gradientForest::importance(gf_SC)
+gradientForest::importance(gf_JS)
+
+gf_SC$imp.rsq
+gf_JS$imp.rsq
+
+most_important_SC <- names(gradientForest::importance(gf_SC))
+most_important_JS <- names(gradientForest::importance(gf_JS))
+
+par(mgp=c(2,0.75,0))
+plot(gf_SC, plot.type="S", imp.vars=most_important_SC,
+     leg.posn = "topright", cex.legend= 1, cex.axis =1,
+     cex.lab = 1, line.ylab = 0.9, par.args=list(mgp=c(1.5,0.5,0),
+                                                 mar=c(3.1,1.5,0.1,1)))
+
+
+i = "GJ2"
+imp <- gradientForest::importance(gf_SC)[i]
+resA <- gf_SC$res[gf_SC$res$var == i, ]
+splits <- resA$split
+w <- pmax(resA$improve.norm, 0)
+X <- na.omit(gf_SC$X[,i])
+rX <- range(X)
+dX <- diff(rX)
+plot(splits)
+
+# importance density I(x)
+dImp <- stats::density(splits, weight = w/sum(w), from = rX[1], to = rX[2])
+if((dX/dImp$bw) > 50)  
+  dImp <- density(splits, weight = w/sum(w), from = rX[1], to = rX[2], bw=dX/50)
+dImpNorm <- normalize.density(dImp,imp,integrate=T)
+plot(dImp)
+
+# data density d(x)
+dObs <- stats::density(X, from = rX[1], to = rX[2])
+if((dX/dObs$bw) > 50)  
+  dObs <- density(X, from = rX[1], to = rX[2], bw=dX/50)
+dObs <- whiten(dObs,lambda=0.9)
+dObsNorm <- normalize.density(dObs,imp,integrate=T)
+
+# standardized density f(x) = I(x)/d(x)
+dStd <- dImp
+dStd$y <- dImp$y/dObs$y
+dStdNorm <- try(normalize.density(dStd,imp,integrate=T)) # this sometimes does not converge
+if (class(dStdNorm) == "try-error")
+  dStdNorm <- normalize.histogram(dStd,imp)
+
+# raw importance I
+ci_SC <- cumimp(gf_SC,i,standardize=F)   
+ci_SC$y <- diff(c(0,ci_SC$y))
+ci_SC <- normalize.histogram(ci_SC, imp, bin=F | !is.binned(gf_SC), nbin=201)
+ci_SC$x <- expm1(ci_SC$x)
+
+dStdNorm.data <- as.data.frame(cbind(dImpNorm$x,dStd$y))
+dStdNorm.subset <- as.data.frame(subset(dStdNorm.data, dStdNorm.data$V2 >1))
+expm1(dStdNorm.subset$V1)
+
+plot(dImpNorm$x,dImpNorm$y, type='l',col="black")
+lines(dStdNorm$x,dStdNorm$y, type='l',col="blue")
+lines(dObsNorm$x,dObsNorm$y, type='l',col="red")
+
+par(mfrow=c(1,2))
+plot(ci_SC, type='h', col="grey60", lwd=1, lend=2, xlim=c(0,180))
+lines(expm1(dImpNorm$x),dImpNorm$y, type='l',col="black", xlim=c(0,180))
+lines(expm1(dStdNorm$x),dStdNorm$y, type='l',col="blue", xlim=c(0,180))
+lines(expm1(dObsNorm$x),dObsNorm$y, type='l',col="red", xlim=c(0,180))
+abline(h=1)
+
+j = "GJ1"
+imp_JS <- gradientForest::importance(gf_JS)[j]
+resB <- gf_JS$res[gf_JS$res$var == j, ]
+splits_JS <- resB$split
+w_JS <- pmax(resB$improve.norm, 0)
+X_JS <- na.omit(gf_JS$X[,j])
+rX_JS <- range(X_JS)
+dX_JS <- diff(rX_JS)
+plot(splits_JS)
+
+# importance density I(x)
+dImp_JS <- stats::density(splits_JS, weight = w_JS/sum(w_JS), from = rX_JS[1], to = rX_JS[2])
+if((dX_JS/dImp_JS$bw) > 50)  
+  dImp_JS <- density(splits_JS, weight = w_JS/sum(w_JS), from = rX_JS[1], to = rX_JS[2], bw=dX_JS/50)
+dImpNorm_JS <- normalize.density(dImp_JS,imp_JS,integrate=T)
+plot(dImp_JS)
+
+# data density d(x)
+dObs_JS <- stats::density(X_JS, from = rX_JS[1], to = rX_JS[2])
+if((dX_JS/dObs_JS$bw) > 50)  
+  dObs_JS <- density(X_JS, from = rX_JS[1], to = rX_JS[2], bw=dX_JS/50)
+dObs_JS <- whiten(dObs_JS,lambda=0.9)
+dObsNorm_JS <- normalize.density(dObs_JS,imp_JS,integrate=T)
+
+# standardized density f(x) = I(x)/d(x)
+dStd_JS <- dImp_JS
+dStd_JS$y <- dImp_JS$y/dObs_JS$y
+dStdNorm_JS <- try(normalize.density(dStd_JS,imp_JS,integrate=T)) # this sometimes does not converge
+if (class(dStdNorm_JS) == "try-error")
+  dStdNorm_JS <- normalize.histogram(dStd_JS,imp_JS)
+
+dStdNorm_JS.data <- as.data.frame(cbind(dImpNorm_JS$x,dStd_JS$y))
+dStdNorm_JS.subset <- as.data.frame(subset(dStdNorm_JS.data, dStdNorm_JS.data$V2 >1))
+expm1(dStdNorm_JS.subset$V1)
+
+# raw importance I
+ci_JS <- cumimp(gf_JS,j,standardize=F)   
+ci_JS$y <- diff(c(0,ci_JS$y))
+ci_JS <- normalize.histogram(ci_JS, imp_JS, bin=F | !is.binned(gf_JS), nbin=201)
+ci_JS$x <- expm1(ci_JS$x)
+
+plot(dImpNorm_JS$x,dImpNorm_JS$y, type='l',col="black")
+lines(dStdNorm_JS$x,dStdNorm_JS$y, type='l',col="blue")
+lines(dObsNorm_JS$x,dObsNorm_JS$y, type='l',col="red")
+
+plot(ci_JS, type='h', col="grey60", lwd=1, lend=2, xlim=c(0,220),ylim=c(0,0.03))
+lines(expm1(dImpNorm_JS$x),dImpNorm_JS$y, type='l',col="black", xlim=c(0,220))
+lines(expm1(dStdNorm_JS$x),dStdNorm_JS$y, type='l',col="blue", xlim=c(0,220))
+lines(expm1(dObsNorm_JS$x),dObsNorm_JS$y, type='l',col="red", xlim=c(0,220))
+
+
+# Built-in function
+most_important <- names(importance(gf_JS))
+par(mgp=c(2,0.75,0))
+plot(gf_JS, plot.type="S", imp.vars=most_important_JS,
+     leg.posn = "topright", cex.legend= 1, cex.axis =1,
+     cex.lab = 1, line.ylab = 0.9, par.args=list(mgp=c(1.5,0.5,0),
+                                                 mar=c(3.1,1.5,0.1,1)))
+
+
+normalize.density <- function(d,integral=1,integrate=T) {
+  # scale y values so that density integrates to integral
+  Id <- if(integrate) integrate.density(d) else 1; 
+  d$y <- d$y/Id*integral; 
+  d
+}
+
+whiten <-  function(dens, lambda=0.9)  {
+    # add a small uniform value to the density to avoid zeroes when taking inverse
+    dens$y <- lambda*dens$y + (1-lambda)/diff(range(dens$x))
+    dens
+}
+
+integrate.density <- function(d) {
+  integrate(approxfun(d,rule=2),lower=min(d$x),upper=max(d$x))$value
+}
+
+scale.density <- function(d,scale=1/mean(d$y)) {
+  d$y <- d$y*scale
+  d
+}
+
+normalize.histogram <- function(ci,integral=1,bin=F,nbin=101) {
+  # scale y values so that histogram integrates to integral
+  # optionally aggregate the y's into binned x ranges 
+  if (bin) {
+    brks <- seq(min(ci$x),max(ci$x),len=nbin)
+    xx <- cut(ci$x,breaks=brks,inc=T)
+    yy <- tapply(ci$y,xx,sum)
+    yy[is.na(yy)] <- 0
+    ci <- list(x=0.5*(brks[-1]+brks[-nbin]),y=yy)
+  }
+  dx <- min(diff(ci$x)); 
+  Id <- sum(ci$y*dx); 
+  ci$y <- ci$y/Id*integral; 
+  ci
+}
+
+is.binned <- function(obj) {
+  compact <- obj$call$compact
+  if (is.null(compact)) 
+    FALSE
+  else
+    eval(compact)
+}
+
