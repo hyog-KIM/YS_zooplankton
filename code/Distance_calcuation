@@ -1,0 +1,30 @@
+library(vegan)
+library(devtools)
+
+discharge <- read.table("D:/Work/20240409 HW/R/discharge_acc7.txt",header=T,sep='\t')
+logdischarge <- log1p(discharge)
+
+Genus_SCJS <- read.table("D:/Work/20240409 HW/R/Genus_SCJS_rev.txt",header=T,sep='\t',stringsAsFactor = FALSE)
+rownames(Genus_SCJS) <- Genus_SCJS$Obs
+Genus_SCJS <- Genus_SCJS[,-1]
+
+Genus_SCJS <- log1p(Genus_SCJS)
+
+Genus_SC <- Genus_SCJS[1:449,]
+Genus_JS <- Genus_SCJS[450:898,]
+
+which(rownames(Genus_SC)=="SC234")
+which(rownames(Genus_SC)=="SC308")
+Genus_SC <- Genus_SC[-c(211,285),]
+logdischarge_SC <- logdischarge[-c(211,285),]
+
+WeirDistmatrix <- as.data.frame(matrix(ncol=1))
+
+for (i in 1:449) {
+  aaa <- vegdist(rbind(Genus_SCJS[i,],Genus_SCJS[i+449,]),method="bray",na.rm=TRUE)
+  WeirDistmatrix=rbind(WeirDistmatrix,aaa)
+}
+
+WeirDistmatrix <- as.data.frame(WeirDistmatrix[-1,])
+colnames(WeirDistmatrix) <- "Distance"
+WeirDistmatrix_SC <- WeirDistmatrix[-c(211,285),]
