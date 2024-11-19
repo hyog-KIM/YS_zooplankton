@@ -1,10 +1,10 @@
 library(vegan)
 library(devtools)
 
-discharge <- read.table("D:/Work/20240409 HW/R/discharge_acc7.txt",header=T,sep='\t')
+discharge <- read.table("~/discharge_acc7.txt",header=T,sep='\t')
 logdischarge <- log1p(discharge)
 
-Genus_SCJS <- read.table("D:/Work/20240409 HW/R/Genus_SCJS_rev.txt",header=T,sep='\t',stringsAsFactor = FALSE)
+Genus_SCJS <- read.table("~/Genus_SCJS_rev.txt",header=T,sep='\t',stringsAsFactor = FALSE)
 rownames(Genus_SCJS) <- Genus_SCJS$Obs
 Genus_SCJS <- Genus_SCJS[,-1]
 
